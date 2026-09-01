@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Event Contract Creator - dreamDEX</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center p-4 sm:p-6">
+
+  <header class="w-full max-w-3xl flex flex-wrap justify-between items-center mb-8 pb-4 border-b border-slate-800 gap-3">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center font-bold text-slate-950">AI</div>
+      <span class="text-xl font-bold tracking-wide">dreamDEX <span class="text-green-400 text-sm">EventCreator</span></span>
+    </div>
+
+    <div class="flex items-center gap-2 sm:gap-3">
+      <select id="langSelect" onchange="changeLanguage(this.value)" class="bg-slate-800 text-slate-200 border border-slate-700 text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:border-green-500 cursor-pointer">
+        <option value="en" selected>🌐 English</option>
+        <option value="es">🇪🇸 Español</option>
+        <option value="ar">🇸🇦 العربية</option>
+        <option value="zh">🇨🇳 中文</option>
+        <option value="fr">🇫🇷 Français</option>
+        <option value="de">🇩🇪 Deutsch</option>
+        <option value="ja">🇯🇵 日本語</option>
+        <option value="pt">🇵🇹 Português</option>
+        <option value="ru">🇷🇺 Русский</option>
+        <option value="tr">🇹🇷 Türkçe</option>
+        <option value="hi">🇮🇳 हिन्दी</option>
+        <option value="id">🇮🇩 Indonesia</option>
+        <option value="ko">🇰🇷 한국어</option>
+        <option value="sw">🇰🇪 Kiswahili</option>
+        <option value="it">🇮🇹 Italiano</option>
+      </select>
+
+      <button onclick="connectWallet()" id="walletBtn" class="bg-slate-800 hover:bg-slate-700 text-green-400 border border-green-500/30 px-3.5 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2">
+        <i class="fa-solid fa-wallet"></i> <span id="walletText">Connect Wallet</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-3xl w-full bg-slate-900 rounded-2xl p-6 sm:p-8 shadow-2xl border border-slate-800">
+    <div class="mb-6">
+      <h1 id="i18n-title" class="text-2xl sm:text-3xl font-extrabold text-white mb-2">AI Event Contract Generator</h1>
+      <p id="i18n-subtitle" class="text-slate-400 text-sm">Convert any real-world event into a structured prediction market contract on Somnia Network.</p>
+    </div>
+
+    <div class="mb-4">
+      <label id="i18n-sample-label" class="block text-xs font-semibold uppercase text-slate-400 mb-2">Try these sample prompts:</label>
+      <div class="flex flex-wrap gap-2">
+        <button onclick="setPrompt('Bitcoin will exceed $100,000 before end of 2026')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-full border border-slate-700 transition">🚀 BTC > $100k</button>
+        <button onclick="setPrompt('Real Madrid will win the UEFA Champions League in 2027')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-full border border-slate-700 transition">⚽ UCL Winner 2027</button>
+        <button onclick="setPrompt('US Federal Reserve will cut interest rates before Q4 2026')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-full border border-slate-700 transition">📈 Fed Interest Rate</button>
+      </div>
+    </div>
+
+    <div class="mb-6">
+      <textarea id="userInput" rows="3" class="w-full p-4 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition text-sm" placeholder="Type the event or prediction you want to generate a contract for..."></textarea>
+    </div>
+
+    <button onclick="generateContract()" class="w-full bg-green-500 hover:bg-green-400 text-slate-950 font-bold py-3.5 rounded-xl transition shadow-lg shadow-green-500/10 flex items-center justify-center gap-2">
+      <i class="fa-solid fa-wand-magic-sparkles"></i> <span id="i18n-btn-generate">Generate Event Contract</span>
+    </button>
+
+    <div id="loading" class="hidden my-8 text-center">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-green-500 border-t-transparent"></div>
+      <p id="i18n-loading" class="text-slate-400 text-sm mt-2">AI is building Event Contract Smart Rules...</p>
+    </div>
+
+    <div id="outputContainer" class="mt-8 hidden">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-file-contract text-green-400"></i> <span id="i18n-preview-title">Event Contract Preview</span>
+        </h2>
+        <button onclick="copyContract()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
+          <i class="fa-regular fa-copy"></i> <span id="i18n-btn-copy">Copy JSON</span>
+        </button>
+      </div>
+
+      <div class="bg-slate-950 rounded-xl p-5 border border-slate-800 space-y-4">
+        <div>
+          <span id="i18n-lbl-title" class="text-xs text-slate-500 font-semibold uppercase">Contract Title</span>
+          <h3 id="cardTitle" class="text-lg font-bold text-green-400">--</h3>
+        </div>
+
+        <div>
+          <span id="i18n-lbl-desc" class="text-xs text-slate-500 font-semibold uppercase">Description</span>
+          <p id="cardDesc" class="text-sm text-slate-300 mt-0.5">--</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 pt-2 border-t border-slate-900">
+          <div>
+            <span id="i18n-lbl-outcomes" class="text-xs text-slate-500 font-semibold uppercase">Outcomes</span>
+            <div id="cardOutcomes" class="flex gap-2 mt-1"></div>
+          </div>
+          <div>
+            <span id="i18n-lbl-risk" class="text-xs text-slate-500 font-semibold uppercase">Risk Level</span>
+            <div id="cardRisk" class="mt-1"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 pt-2 border-t border-slate-900">
+          <div>
+            <span id="i18n-lbl-oracle" class="text-xs text-slate-500 font-semibold uppercase">Resolution Oracle</span>
+            <p id="cardOracle" class="text-xs text-slate-300 mt-1">--</p>
+          </div>
+          <div>
+            <span id="i18n-lbl-deadline" class="text-xs text-slate-500 font-semibold uppercase">Target Deadline</span>
+            <p id="cardDeadline" class="text-xs text-slate-300 mt-1">--</p>
+          </div>
+        </div>
+      </div>
+
+      <details class="mt-4">
+        <summary id="i18n-lbl-raw" class="text-xs text-slate-500 hover:text-slate-400 cursor-pointer">View Raw JSON Data</summary>
+        <pre id="jsonOutput" class="bg-slate-950 p-4 rounded-lg text-green-400 font-mono text-xs overflow-x-auto border border-slate-800 mt-2 whitespace-pre-wrap"></pre>
+      </details>
+    </div>
+  </main>
+
+  <script>
+    let rawJsonResponse = "";
+    let currentLang = "en";
+
+    // 15 Languages Dictionary
+    const translations = {
+      en: {
+        title: "AI Event Contract Generator",
+        subtitle: "Convert any real-world event into a structured prediction market contract on Somnia Network.",
+        sampleLabel: "Try these sample prompts:",
+        placeholder: "Type the event or prediction you want to generate a contract for...",
+        btnGenerate: "Generate Event Contract",
+        loading: "AI is building Event Contract Smart Rules...",
+        previewTitle: "Event Contract Preview",
+        btnCopy: "Copy JSON",
+        lblTitle: "Contract Title",
+        lblDesc: "Description",
+        lblOutcomes: "Outcomes",
+        lblRisk: "Risk Level",
+        lblOracle: "Resolution Oracle",
+        lblDeadline: "Target Deadline",
+        lblRaw: "View Raw JSON Data",
+        wallet: "Connect Wallet"
+      },
+      es: {
+        title: "Generador de Contratos de Eventos IA",
+        subtitle: "Convierte cualquier evento real en un contrato de mercado de predicción en Somnia Network.",
+        sampleLabel: "Prueba estos ejemplos:",
+        placeholder: "Escribe el evento o predicción para generar un contrato...",
+        btnGenerate: "Generar Contrato de Evento",
+        loading: "La IA está creando las reglas del contrato...",
+        previewTitle: "Vista Previa del Contrato",
+        btnCopy: "Copiar JSON",
+        lblTitle: "Título del Contrato",
+        lblDesc: "Descripción",
+        lblOutcomes: "Resultados",
+        lblRisk: "Nivel de Riesgo",
+        lblOracle: "Oráculo de Resolución",
+        lblDeadline: "Fecha Límite",
+        lblRaw: "Ver Datos JSON",
+        wallet: "Conectar Billetera"
+      },
+      ar: {
+        title: "مولد عقود الأحداث بالذكاء الاصطناعي",
+        subtitle: "تحويل أي حدث واقعي إلى عقد سوق توقعات على شبكة Somnia.",
+        sampleLabel: "جرب هذه أمثلة:",
+        placeholder: "اكتب الحدث أو التوقع الذي تريد إنشاء عقد له...",
+        btnGenerate: "إنشاء عقد الحدث",
+        loading: "الذكاء الاصطناعي يبني قواعد العقد الذكي...",
+        previewTitle: "معاينة عقد الحدث",
+        btnCopy: "نسخ JSON",
+        lblTitle: "عنوان العقد",
+        lblDesc: "الوصف",
+        lblOutcomes: "النتائج",
+        lblRisk: "مستوى المخاطرة",
+        lblOracle: "مصدر التحقق (Oracle)",
+        lblDeadline: "الموعد النهائي",
+        lblRaw: "عرض بيانات JSON الخام",
+        wallet: "ربط المحفظة"
+      },
+      zh: {
+        title: "AI 事件合约生成器",
+        subtitle: "将现实世界中的任何事件转换为 Somnia Network 上的结构化预测市场合约。",
+        sampleLabel: "尝试这些示例提示：",
+        placeholder: "输入您要为其生成合约的事件或预测...",
+        btnGenerate: "生成事件合约",
+        loading: "AI 正在构建智能合约规则...",
+        previewTitle: "事件合约预览",
+        btnCopy: "复制 JSON",
+        lblTitle: "合约标题",
+        lblDesc: "描述",
+        lblOutcomes: "可能结果",
+        lblRisk: "风险等级",
+        lblOracle: "裁决预言机",
+        lblDeadline: "截止日期",
+        lblRaw: "查看原始 JSON 数据",
+        wallet: "连接钱包"
+      },
+      fr: {
+        title: "Générateur de Contrats d'Événements IA",
+        subtitle: "Transformez n'importe quel événement réel en contrat de marché de prédiction sur Somnia Network.",
+        sampleLabel: "Essayez ces exemples :",
+        placeholder: "Saisissez l'événement ou la prédiction pour générer un contrat...",
+        btnGenerate: "Générer le Contrat",
+        loading: "L'IA crée les règles intelligentes du contrat...",
+        previewTitle: "Aperçu du Contrat",
+        btnCopy: "Copier le JSON",
+        lblTitle: "Titre du Contrat",
+        lblDesc: "Description",
+        lblOutcomes: "Résultats",
+        lblRisk: "Niveau de Risque",
+        lblOracle: "Oracle de Résolution",
+        lblDeadline: "Date Limite",
+        lblRaw: "Voir les données JSON",
+        wallet: "Connecter le Portefeuille"
+      },
+      de: {
+        title: "KI Ereignis-Vertragsgenerator",
+        subtitle: "Verwandeln Sie jedes reale Ereignis in einen Vorhersagemarkt-Vertrag auf Somnia Network.",
+        sampleLabel: "Versuchen Sie diese Beispiele:",
+        placeholder: "Geben Sie das Ereignis oder die Vorhersage ein...",
+        btnGenerate: "Ereignisvertrag Erstellen",
+        loading: "KI erstellt die Smart-Contract-Regeln...",
+        previewTitle: "Vertragsvorschau",
+        btnCopy: "JSON Kopieren",
+        lblTitle: "Vertragstitel",
+        lblDesc: "Beschreibung",
+        lblOutcomes: "Ergebnisse",
+        lblRisk: "Risikostufe",
+        lblOracle: "Auflösungs-Orakel",
+        lblDeadline: "Ziel-Deadline",
+        lblRaw: "Roh-JSON-Daten anzeigen",
+        wallet: "Wallet Verbinden"
+      },
+      ja: {
+        title: "AI イベントコントラクト生成器",
+        subtitle: "現実世界のイベントを Somnia ネットワーク上の予測市場コントラクトに変換します。",
+        sampleLabel: "サンプルプロンプトを試す：",
+        placeholder: "コントラクトを生成したいイベントまたは予測を入力...",
+        btnGenerate: "イベントコントラクトを生成",
+        loading: "AIがスマートルールを構築中...",
+        previewTitle: "コントラクトプレビュー",
+        btnCopy: "JSONをコピー",
+        lblTitle: "コントラクト名",
+        lblDesc: "説明",
+        lblOutcomes: "結果の選択肢",
+        lblRisk: "リスクレベル",
+        lblOracle: "オラクルソース",
+        lblDeadline: "締切期限",
+        lblRaw: "生JSONデータを表示",
+        wallet: "ウォレット接続"
+      },
+      pt: {
+        title: "Gerador de Contratos de Eventos IA",
+        subtitle: "Converta qualquer evento real em um contrato de mercado de previsão na Somnia Network.",
+        sampleLabel: "Tente estes exemplos:",
+        placeholder: "Digite o evento ou previsão para gerar um contrato...",
+        btnGenerate: "Gerar Contrato de Evento",
+        loading: "A IA está criando as regras do contrato inteligente...",
+        previewTitle: "Prévia do Contrato",
+        btnCopy: "Copiar JSON",
+        lblTitle: "Título do Contrato",
+        lblDesc: "Descrição",
+        lblOutcomes: "Resultados",
+        lblRisk: "Nível de Risco",
+        lblOracle: "Oráculo de Resolução",
+        lblDeadline: "Prazo Final",
+        lblRaw: "Ver Dados JSON Brutos",
+        wallet: "Conectar Carteira"
+      },
+      ru: {
+        title: "ИИ Генератор Контрактов Событий",
+        subtitle: "Превратите любое реальное событие в контракт рынка предсказаний на Somnia Network.",
+        sampleLabel: "Попробуйте эти примеры:",
+        placeholder: "Введите событие или прогноз для создания контракта...",
+        btnGenerate: "Создать Контракт События",
+        loading: "ИИ создает правила смарт-контракта...",
+        previewTitle: "Предпросмотр Контракта",
+        btnCopy: "Копировать JSON",
+        lblTitle: "Название Контракта",
+        lblDesc: "Описание",
+        lblOutcomes: "Исходы",
+        lblRisk: "Уровень Риска",
+        lblOracle: "Оракул Разрешения",
+        lblDeadline: "Срок Действия",
+        lblRaw: "Просмотр Сырых Данных JSON",
+        wallet: "Подключить Кошелек"
+      },
+      tr: {
+        title: "Yapay Zeka Etkinlik Sözleşmesi Oluşturucu",
+        subtitle: "Gerçek dünyadaki herhangi bir olayı Somnia Ağında bir tahmin piyasası sözleşmesine dönüştürün.",
+        sampleLabel: "Bu örnekleri deneyin:",
+        placeholder: "Sözleşme oluşturmak istediğiniz olayı veya tahmini yazın...",
+        btnGenerate: "Etkinlik Sözleşmesi Oluştur",
+        loading: "Yapay zeka akıllı sözleşme kurallarını oluşturuyor...",
+        previewTitle: "Sözleşme Önizlemesi",
+        btnCopy: "JSON Kopyala",
+        lblTitle: "Sözleşme Başlığı",
+        lblDesc: "Açıklama",
+        lblOutcomes: "Sonuçlar",
+        lblRisk: "Risk Seviyesi",
+        lblOracle: "Çözüm Kahini (Oracle)",
+        lblDeadline: "Son Tarih",
+        lblRaw: "Ham JSON Verisini Gör",
+        wallet: "Cüzdanı Bağla"
+      },
+      hi: {
+        title: "AI इवेंट कॉन्ट्रैक्ट जनरेटर",
+        subtitle: "किसी भी वास्तविक दुनिया की घटना को Somnia नेटवर्क पर एक पूर्वानुमान बाजार अनुबंध में बदलें।",
+        sampleLabel: "इन उदाहरणों को आजमाएं:",
+        placeholder: "वह घटना या भविष्यवाणी लिखें जिसके लिए आप अनुबंध बनाना चाहते हैं...",
+        btnGenerate: "इवेंट कॉन्ट्रैक्ट बनाएं",
+        loading: "AI स्मार्ट कॉन्ट्रैक्ट नियम बना रहा है...",
+        previewTitle: "अनुबंध का पूर्वावलोकन",
+        btnCopy: "JSON कॉपी करें",
+        lblTitle: "अनुबंध का शीर्षक",
+        lblDesc: "विवरण",
+        lblOutcomes: "परिणाम",
+        lblRisk: "जोखिम का स्तर",
+        lblOracle: "समाधान ओरेकल",
+        lblDeadline: "अंतिम तिथि",
+        lblRaw: "कच्चा JSON डेटा देखें",
+        wallet: "वॉलेट कनेक्ट करें"
+      },
+      id: {
+        title: "Pembuat Kontrak Acara AI",
+        subtitle: "Ubah peristiwa dunia nyata menjadi kontrak pasar prediksi di Somnia Network.",
+        sampleLabel: "Coba contoh prompt ini:",
+        placeholder: "Ketik acara atau prediksi yang ingin Anda buatkan kontraknya...",
+        btnGenerate: "Buat Kontrak Acara",
+        loading: "AI sedang membuat aturan kontrak pintar...",
+        previewTitle: "Pratinjau Kontrak Acara",
+        btnCopy: "Salin JSON",
+        lblTitle: "Judul Kontrak",
+        lblDesc: "Deskripsi",
+        lblOutcomes: "Hasil",
+        lblRisk: "Tingkat Risiko",
+        lblOracle: "Oracle Resolusi",
+        lblDeadline: "Batas Waktu Target",
+        lblRaw: "Lihat Data JSON Mentah",
+        wallet: "Hubungkan Dompet"
+      },
+      ko: {
+        title: "AI 이벤트 계약 생성기",
+        subtitle: "현실 세계의 모든 이벤트를 Somnia 네트워크의 예측 시장 계약으로 변환하세요.",
+        sampleLabel: "샘플 프롬프트를 시도해 보세요:",
+        placeholder: "계약을 생성할 이벤트나 예측을 입력하세요...",
+        btnGenerate: "이벤트 계약 생성",
+        loading: "AI가 스마트 계약 규칙을 생성 중입니다...",
+        previewTitle: "이벤트 계약 미리보기",
+        btnCopy: "JSON 복사",
+        lblTitle: "계약 제목",
+        lblDesc: "설명",
+        lblOutcomes: "결과 옵션",
+        lblRisk: "위험 수준",
+        lblOracle: "검증 오라클",
+        lblDeadline: "목표 마감일",
+        lblRaw: "원본 JSON 데이터 보기",
+        wallet: "지갑 연결"
+      },
+      sw: {
+        title: "Kijenereta cha Mkataba wa Matukio cha AI",
+        subtitle: "Badilisha tukio lolote la ulimwengu halisi kuwa mkataba wa soko la utabiri kwenye Somnia Network.",
+        sampleLabel: "Jaribu mifano hii:",
+        placeholder: "Andika tukio au utabiri unayotaka kutengenezea mkataba...",
+        btnGenerate: "Tengeneza Mkataba wa Tukio",
+        loading: "AI inatengeneza sheria za mkataba wa kielektroniki...",
+        previewTitle: "Onyesho la Mkataba wa Tukio",
+        btnCopy: "Nakili JSON",
+        lblTitle: "Kichwa cha Mkataba",
+        lblDesc: "Maelezo",
+        lblOutcomes: "Matokeo",
+        lblRisk: "Kiwango cha Hatari",
+        lblOracle: "Chanzo cha Uhakiki (Oracle)",
+        lblDeadline: "Tarehe ya Mwisho",
+        lblRaw: "Tazama Data ya Raw JSON",
+        wallet: "Unganisha Wallet"
+      },
+      it: {
+        title: "Generatore di Contratti di Eventi AI",
+        subtitle: "Converti qualsiasi evento reale in un contratto di mercato predittivo su Somnia Network.",
+        sampleLabel: "Prova questi esempi:",
+        placeholder: "Inserisci l'evento o la previsione per generare un contratto...",
+        btnGenerate: "Genera Contratto Evento",
+        loading: "L'IA sta creando le regole del contratto...",
+        previewTitle: "Anteprima del Contratto",
+        btnCopy: "Copia JSON",
+        lblTitle: "Titolo del Contratto",
+        lblDesc: "Descrizione",
+        lblOutcomes: "Risultati",
+        lblRisk: "Livello di Rischio",
+        lblOracle: "Oracolo di Risoluzione",
+        lblDeadline: "Scadenza Obiettivo",
+        lblRaw: "Visualizza Dati JSON",
+        wallet: "Connetti Wallet"
+      }
+    };
+
+    function changeLanguage(lang) {
+      currentLang = lang;
+      const t = translations[lang] || translations.en;
+
+      document.getElementById('i18n-title').innerText = t.title;
+      document.getElementById('i18n-subtitle').innerText = t.subtitle;
+      document.getElementById('i18n-sample-label').innerText = t.sampleLabel;
+      document.getElementById('userInput').placeholder = t.placeholder;
+      document.getElementById('i18n-btn-generate').innerText = t.btnGenerate;
+      document.getElementById('i18n-loading').innerText = t.loading;
+      document.getElementById('i18n-preview-title').innerText = t.previewTitle;
+      document.getElementById('i18n-btn-copy').innerText = t.btnCopy;
+      document.getElementById('i18n-lbl-title').innerText = t.lblTitle;
+      document.getElementById('i18n-lbl-desc').innerText = t.lblDesc;
+      document.getElementById('i18n-lbl-outcomes').innerText = t.lblOutcomes;
+      document.getElementById('i18n-lbl-risk').innerText = t.lblRisk;
+      document.getElementById('i18n-lbl-oracle').innerText = t.lblOracle;
+      document.getElementById('i18n-lbl-deadline').innerText = t.lblDeadline;
+      document.getElementById('i18n-lbl-raw').innerText = t.lblRaw;
+
+      if (!document.getElementById('walletText').innerText.startsWith("0x")) {
+        document.getElementById('walletText').innerText = t.wallet;
+      }
+    }
+
+    function setPrompt(text) {
+      document.getElementById('userInput').value = text;
+    }
+
+    function connectWallet() {
+      const btnText = document.getElementById('walletText');
+      btnText.innerText = "0x71C...8F9a (Somnia)";
+      alert("Wallet Connected: Somnia Testnet");
+    }
+
+    async function generateContract() {
+      const input = document.getElementById('userInput').value;
+      if (!input) return alert('Please enter an event or prediction!');
+
+      const loading = document.getElementById('loading');
+      const outputContainer = document.getElementById('outputContainer');
+      
+      outputContainer.classList.add('hidden');
+      loading.classList.remove('hidden');
+
+      const apiKey = "YOUR_GEMINI_API_KEY"; 
+
+      if (apiKey === "YOUR_GEMINI_API_KEY") {
+        setTimeout(() => {
+          const mockData = {
+            "title": input.length > 40 ? input.substring(0, 40) + "..." : input,
+            "description": `Automated Event Contract for prediction: "${input}"`,
+            "outcomes": ["YES", "NO"],
+            "resolution_source": "Somnia Chainlink Oracle / Public Data Feed",
+            "strike_deadline": "2026-12-31 23:59:00 UTC",
+            "risk_level": "Medium",
+            "network": "Somnia Testnet (dreamDEX)"
+          };
+          renderResult(mockData);
+          loading.classList.add('hidden');
+          outputContainer.classList.remove('hidden');
+        }, 800);
+        return;
+      }
+
+      try {
+        const prompt = `Convert this text into a structured JSON event contract for dreamDEX prediction market: "${input}". 
+        Return strictly a JSON object with keys: title, description, outcomes (array), resolution_source, strike_deadline, risk_level. Respond in ${currentLang} language for description if applicable.`;
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+
+        const data = await response.json();
+        let text = data.candidates[0].content.parts[0].text;
+        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(text);
+        
+        renderResult(parsed);
+      } catch (err) {
+        alert("Error: Please check your API key or internet connection.");
+      } finally {
+        loading.classList.add('hidden');
+        outputContainer.classList.remove('hidden');
+      }
+    }
+
+    function renderResult(data) {
+      rawJsonResponse = JSON.stringify(data, null, 2);
+      document.getElementById('jsonOutput').innerText = rawJsonResponse;
+
+      document.getElementById('cardTitle').innerText = data.title;
+      document.getElementById('cardDesc').innerText = data.description;
+      document.getElementById('cardOracle').innerText = data.resolution_source;
+      document.getElementById('cardDeadline').innerText = data.strike_deadline;
+
+      const outcomesDiv = document.getElementById('cardOutcomes');
+      outcomesDiv.innerHTML = data.outcomes.map(o => 
+        `<span class="bg-green-500/10 text-green-400 border border-green-500/20 text-xs font-bold px-2.5 py-1 rounded-md">${o}</span>`
+      ).join('');
+
+      const riskDiv = document.getElementById('cardRisk');
+      const riskColor = data.risk_level === 'High' ? 'text-red-400 bg-red-500/10 border-red-500/20' : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20';
+      riskDiv.innerHTML = `<span class="${riskColor} border text-xs font-bold px-2.5 py-1 rounded-md">${data.risk_level || 'Medium'}</span>`;
+    }
+
+    function copyContract() {
+      navigator.clipboard.writeText(rawJsonResponse);
+      alert('Event Contract JSON copied to clipboard!');
+    }
+  </script>
+</body>
+</html>
